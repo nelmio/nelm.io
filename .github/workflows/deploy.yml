@@ -1,0 +1,36 @@
+name: "Deploy"
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    name: Build & Deploy Site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          extensions: intl
+          ini-values: memory_limit=-1
+          php-version: 8.4
+
+      - name: Install dependencies
+        run: |
+          composer install -n
+          npm install
+
+      - name: Build site
+        run: npm run prod
+
+      - name: Commit new build
+        run: |
+          git add -f build_production
+          git config --global user.email "j.boggiano@seld.be"
+          git config --global user.name "Jordi Boggiano"
+          git commit -m "Build for deploy"
+          git subtree split --prefix build_production -b gh-pages
+          git push -f origin gh-pages
